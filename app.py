@@ -170,6 +170,12 @@ if st.button("Ejecutar cálculo XTB"):
 
         stdout, stderr = run_xtb(command)
 
+        st.subheader("STDOUT")
+        st.code(stdout)
+        
+        st.subheader("STDERR")
+        st.code(stderr)
+
     st.success("Cálculo finalizado")
 
     # Mostrar salida si existe
