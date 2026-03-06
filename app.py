@@ -9,6 +9,7 @@ st.set_page_config(
     page_title="XTB Web Interface",
     page_icon="⚛️"
 )
+st.sidebar.image("img/inXTB_logo.png", caption="Dr. Jesus Alvarado-Huayhuaz")
 
 st.title("Cálculo con XTB")
 
