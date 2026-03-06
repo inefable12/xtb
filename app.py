@@ -125,6 +125,42 @@ def zip_results():
 # EJECUTAR CÁLCULO
 # ==============================
 
+###################################################################
+st.sidebar.header("Diagnóstico del sistema")
+
+if st.sidebar.button("Verificar instalación de XTB"):
+
+    st.subheader("Diagnóstico del entorno")
+
+    # Mostrar PATH
+    st.write("PATH del sistema:")
+    st.code(os.environ.get("PATH"))
+
+    # Verificar si xtb existe
+    st.write("Ubicación de xtb:")
+
+    result = subprocess.run(
+        "which xtb",
+        shell=True,
+        capture_output=True,
+        text=True
+    )
+
+    st.code(result.stdout if result.stdout else "xtb no encontrado")
+
+    # Versión de xtb
+    st.write("Versión de xtb:")
+
+    version = subprocess.run(
+        "xtb --version",
+        shell=True,
+        capture_output=True,
+        text=True
+    )
+
+    st.code(version.stdout if version.stdout else version.stderr)
+###################################################################
+
 if st.button("Ejecutar cálculo XTB"):
 
     with open("input.xyz", "w") as f:
