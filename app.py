@@ -2,19 +2,68 @@ import streamlit as st
 import subprocess
 import zipfile
 import os
+import urllib.request
+import tarfile
 
 st.set_page_config(
     page_title="XTB Web Interface",
     page_icon="⚛️"
 )
 
-st.sidebar.image("img/inXTB_logo.png", caption="Dr. Jesus Alvarado-Huayhuaz")
-
 st.title("Cálculo con XTB")
 
-# ==============================
-# INPUT MOLECULAR (solo XYZ)
-# ==============================
+# =========================================================
+# INSTALACIÓN AUTOMÁTICA DE XTB
+# =========================================================
+
+@st.cache_resource
+def install_xtb():
+
+    check = subprocess.run(
+        "which xtb",
+        shell=True,
+        capture_output=True,
+        text=True
+    )
+
+    if check.stdout.strip() != "":
+        return "XTB ya está instalado"
+
+    url = "https://github.com/grimme-lab/xtb/releases/download/v6.7.1/xtb-6.7.1-linux-x86_64.tar.xz"
+
+    archive = "xtb.tar.xz"
+
+    st.write("Descargando XTB...")
+
+    urllib.request.urlretrieve(url, archive)
+
+    st.write("Extrayendo archivos...")
+
+    with tarfile.open(archive) as tar:
+        tar.extractall()
+
+    xtb_path = None
+
+    for folder in os.listdir():
+        if folder.startswith("xtb-6.7.1"):
+            xtb_path = os.path.join(folder, "bin")
+
+    if xtb_path:
+
+        os.environ["PATH"] += ":" + xtb_path
+
+        return f"XTB instalado en {xtb_path}"
+
+    return "No se pudo instalar XTB"
+
+
+status = install_xtb()
+
+st.sidebar.write(status)
+
+# =========================================================
+# INPUT XYZ
+# =========================================================
 
 st.sidebar.header("Input molecular")
 
@@ -31,9 +80,9 @@ xyz = st.text_area(
     height=200
 )
 
-# ==============================
+# =========================================================
 # OPCIONES XTB
-# ==============================
+# =========================================================
 
 st.sidebar.header("Opciones XTB")
 
@@ -62,9 +111,9 @@ outfile = st.sidebar.text_input(
     "resultado.out"
 )
 
-# ==============================
+# =========================================================
 # CONSTRUIR COMANDO
-# ==============================
+# =========================================================
 
 flags = ""
 
@@ -89,9 +138,9 @@ st.subheader("Comando generado")
 
 st.code(command)
 
-# ==============================
-# FUNCIÓN PARA EJECUTAR XTB
-# ==============================
+# =========================================================
+# EJECUTAR XTB
+# =========================================================
 
 def run_xtb(command):
 
@@ -104,10 +153,9 @@ def run_xtb(command):
 
     return process.stdout, process.stderr
 
-
-# ==============================
+# =========================================================
 # FUNCIÓN ZIP
-# ==============================
+# =========================================================
 
 def zip_results():
 
@@ -120,46 +168,24 @@ def zip_results():
 
     return "resultados.zip"
 
+# =========================================================
+# TEST VERSION XTB
+# =========================================================
 
-# ==============================
-# EJECUTAR CÁLCULO
-# ==============================
-
-###################################################################
-st.sidebar.header("Diagnóstico del sistema")
-
-if st.sidebar.button("Verificar instalación de XTB"):
-
-    st.subheader("Diagnóstico del entorno")
-
-    # Mostrar PATH
-    st.write("PATH del sistema:")
-    st.code(os.environ.get("PATH"))
-
-    # Verificar si xtb existe
-    st.write("Ubicación de xtb:")
+if st.sidebar.button("Ver versión XTB"):
 
     result = subprocess.run(
-        "which xtb",
-        shell=True,
-        capture_output=True,
-        text=True
-    )
-
-    st.code(result.stdout if result.stdout else "xtb no encontrado")
-
-    # Versión de xtb
-    st.write("Versión de xtb:")
-
-    version = subprocess.run(
         "xtb --version",
         shell=True,
         capture_output=True,
         text=True
     )
 
-    st.code(version.stdout if version.stdout else version.stderr)
-###################################################################
+    st.code(result.stdout if result.stdout else result.stderr)
+
+# =========================================================
+# EJECUTAR CÁLCULO
+# =========================================================
 
 if st.button("Ejecutar cálculo XTB"):
 
@@ -170,15 +196,8 @@ if st.button("Ejecutar cálculo XTB"):
 
         stdout, stderr = run_xtb(command)
 
-        st.subheader("STDOUT")
-        st.code(stdout)
-        
-        st.subheader("STDERR")
-        st.code(stderr)
-
     st.success("Cálculo finalizado")
 
-    # Mostrar salida si existe
     if os.path.exists(outfile):
 
         st.subheader("Salida del cálculo")
@@ -186,9 +205,9 @@ if st.button("Ejecutar cálculo XTB"):
         with open(outfile) as f:
             st.text(f.read())
 
-    # ==========================
-    # ZIP
-    # ==========================
+    # =====================================================
+    # DESCARGA ZIP
+    # =====================================================
 
     zip_file = zip_results()
 
